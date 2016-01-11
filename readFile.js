@@ -72,7 +72,7 @@ function reverseImage (readFile, writeFile) {
       }
     } else {
       var rowSize = image.width * 3;
-      for (var i = 0; i < 300; i += 3) {
+      for (var i = 0; i < rowSize; i += 3) {
         var pixel = {};
         pixel.blue = buffer.readUInt8(image.start + (rowSize * row) + i);
         pixel.green = buffer.readUInt8(image.start + (rowSize * row) + i + 1);
@@ -84,16 +84,18 @@ function reverseImage (readFile, writeFile) {
   };
 
   function writeRow(row) {
+    var rowSize = image.width;
     if (image.palette) {
-      for (var i = 0; i < image.width; i++) {
-        revBuffer.writeUInt8(revArray[i], image.start + (100 * row)  + i);
+      for (var i = 0; i < rowSize; i++) {
+        revBuffer.writeUInt8(revArray[i], image.start + (rowSize * row)  + i);
       }
     } else {
+      rowSize *= 3;
       index = 0;
-      for (var i = 0; i < 300; i += 3) {
-        revBuffer.writeUInt8(regArray[index].blue, image.start + (image.width * 3 * row) + i);
-        revBuffer.writeUInt8(regArray[index].green, image.start + (image.width * 3 * row) + i + 1);
-        revBuffer.writeUInt8(regArray[index].red, image.start + (image.width * 3 * row) + i + 2);
+      for (var i = 0; i < rowSize; i += 3) {
+        revBuffer.writeUInt8(regArray[index].blue, image.start + (rowSize * row) + i);
+        revBuffer.writeUInt8(regArray[index].green, image.start + (rowSize * row) + i + 1);
+        revBuffer.writeUInt8(regArray[index].red, image.start + (rowSize * row) + i + 2);
         index++;
       }
     }
@@ -104,22 +106,21 @@ function invertColors(readFile, writeFile) {
   var buffer = getBuffer(readFile);
   var image = getImageInfo(buffer);
 
-  var invertBuffer = new Buffer(buffer);
   if (image.depth <= 8) {
     invertPalette();
   } else {
     invertPixels();
   }
-  fs.writeFile(writeFile, invertBuffer);
+  fs.writeFile(writeFile, buffer);
 
   function invertPixels() {
     for (var offset = 0; offset < 30000; offset += 3) {
       var newBlue = 255 - buffer.readUInt8(image.start + offset);
       var newGreen = 255 - buffer.readUInt8(image.start + offset + 1);
       var newRed = 255 - buffer.readUInt8(image.start + offset + 2);
-      invertBuffer.writeUInt8(newBlue, image.start + offset);
-      invertBuffer.writeUInt8(newGreen, image.start + offset + 1);
-      invertBuffer.writeUInt8(newRed, image.start + offset + 2);
+      buffer.writeUInt8(newBlue, image.start + offset);
+      buffer.writeUInt8(newGreen, image.start + offset + 1);
+      buffer.writeUInt8(newRed, image.start + offset + 2);
     }
   };
 
@@ -129,9 +130,9 @@ function invertColors(readFile, writeFile) {
       var newRed = 255 - image.palette[index].red;
       var newGreen = 255 - image.palette[index].green;
       var newBlue = 255 - image.palette[index].blue;
-      invertBuffer.writeUInt8(newRed, 14 + image.dibHeaderSize + offset);
-      invertBuffer.writeUInt8(newGreen, 14 + image.dibHeaderSize + offset + 1);
-      invertBuffer.writeUInt8(newBlue, 14 + image.dibHeaderSize + offset + 2);
+      buffer.writeUInt8(newRed, 14 + image.dibHeaderSize + offset);
+      buffer.writeUInt8(newGreen, 14 + image.dibHeaderSize + offset + 1);
+      buffer.writeUInt8(newBlue, 14 + image.dibHeaderSize + offset + 2);
       index++;
     }
   };
@@ -141,13 +142,12 @@ function grayScale(readFile, writeFile) {
   var buffer = getBuffer(readFile);
   var image = getImageInfo(buffer);
 
-  var grayBuffer = new Buffer(buffer);
   if (image.depth <= 8) {
     grayscalePalette();
   } else {
     grayscalePixels();
   }
-  fs.writeFile(writeFile, grayBuffer);
+  fs.writeFile(writeFile, buffer);
 
   function grayscalePixels () {
     for (var offset = 0; offset < 30000; offset += 3) {
@@ -155,9 +155,9 @@ function grayScale(readFile, writeFile) {
       var oldGreen = buffer.readUInt8(image.start + offset + 1);
       var oldRed = buffer.readUInt8(image.start + offset + 2);
       var hue = (oldBlue + oldGreen + oldRed) / 3;
-      grayBuffer.writeUInt8(hue, image.start + offset);
-      grayBuffer.writeUInt8(hue, image.start + offset + 1);
-      grayBuffer.writeUInt8(hue, image.start + offset + 2);
+      buffer.writeUInt8(hue, image.start + offset);
+      buffer.writeUInt8(hue, image.start + offset + 1);
+      buffer.writeUInt8(hue, image.start + offset + 2);
     }
   };
 
@@ -165,15 +165,15 @@ function grayScale(readFile, writeFile) {
     var index = 0;
     for (var offset = 0; offset < image.paletteSize; offset += 4) {
       var hue = (image.palette[index].red + image.palette[index].green + image.palette[index].blue) / 3;
-      grayBuffer.writeUInt8(hue, 14 + image.dibHeaderSize + offset);
-      grayBuffer.writeUInt8(hue, 14 + image.dibHeaderSize + offset + 1);
-      grayBuffer.writeUInt8(hue, 14 + image.dibHeaderSize + offset + 2);
+      buffer.writeUInt8(hue, 14 + image.dibHeaderSize + offset);
+      buffer.writeUInt8(hue, 14 + image.dibHeaderSize + offset + 1);
+      buffer.writeUInt8(hue, 14 + image.dibHeaderSize + offset + 2);
       index++;
     }
   };
 };
 
 
-reverseImage('./img/non-palette-bitmap.bmp', './img/reverse-non-palette.bmp');
+// reverseImage('./img/non-palette-bitmap.bmp', './img/reverse-non-palette.bmp');
 invertColors('./img/palette-bitmap.bmp', './img/invert-palette.bmp');
-grayScale('./img/non-palette-bitmap.bmp', './img/gray-non-palette.bmp');
+// grayScale('./img/non-palette-bitmap.bmp', './img/gray-non-palette.bmp');
