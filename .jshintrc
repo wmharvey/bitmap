@@ -1,0 +1,14 @@
+{
+  "undef": true,
+  "globals": {
+    "require"     : false,
+    "exports"     : false,
+    "module"      : false,
+    "describe"    : false,
+    "process"     : false,
+    "console"     : false,
+    "it"          : false,
+    "Buffer"      : false
+  },
+  "esnext": true
+}
